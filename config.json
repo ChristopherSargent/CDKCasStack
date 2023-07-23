@@ -1,0 +1,5 @@
+{
+  "domain_name": "cas.sh",
+  "backend_subdomain": "backend",
+  "frontend_subdomain": "frontend"
+}
