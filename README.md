@@ -2161,6 +2161,188 @@ arn:aws:cloudformation:us-east-1:507370583167:stack/Chapter4Stack/eed92030-2955-
 ```
 12. https://frontend.cas.sh 
 
+# CDK-nag
+* [cdk-nag-walkthrough](https://aws.amazon.com/blogs/devops/manage-application-security-and-compliance-with-the-aws-cloud-development-kit-and-cdk-nag/)
+* [cdk-nag-github](https://github.com/cdklabs/cdk-nag)
+1. ssh cas@172.18.0.193
+2. sudo -i 
+3. 
+4. vim package.json
+* update aws-cdk-lib": "2.34.0" to aws-cdk-lib": "2.78.0"
+```
+{
+  "name": "chapter-4",
+  "version": "0.1.0",
+  "bin": {
+    "chapter-4": "bin/chapter-4.js"
+  },
+  "scripts": {
+    "build:frontend": "cd ../web && yarn install && yarn build",
+    "build": "tsc",
+    "watch": "tsc -w",
+    "test": "jest",
+    "cdk": "cdk"
+  },
+  "devDependencies": {
+    "@types/cors": "^2.8.12",
+    "@types/express": "^4.17.13",
+    "@types/jest": "^27.5.0",
+    "@types/node": "10.17.27",
+    "@types/prettier": "2.6.0",
+    "@types/uuid": "^8.3.4",
+    "@typescript-eslint/eslint-plugin": "^5.31.0",
+    "@typescript-eslint/parser": "^5.31.0",
+    "aws-cdk": "2.34.0",
+    "eslint": "^8.20.0",
+    "eslint-config-airbnb-base": "^15.0.0",
+    "eslint-config-prettier": "^8.5.0",
+    "eslint-import-resolver-typescript": "^3.3.0",
+    "eslint-plugin-import": "^2.26.0",
+    "eslint-plugin-prettier": "^4.2.1",
+    "eslint-plugin-promise": "^6.0.0",
+    "jest": "^27.5.1",
+    "prettier": "^2.7.1",
+    "ts-jest": "^27.1.4",
+    "ts-node": "^10.7.0",
+    "ts-node-dev": "^2.0.0",
+    "typescript": "~3.9.7"
+  },
+  "dependencies": {
+    "@aws-sdk/client-dynamodb": "^3.121.0",
+    "@aws-sdk/lib-dynamodb": "^3.121.0",
+    "aws-cdk-lib": "2.78.0",
+    "cdk-nag": "^2.27.79",
+    "constructs": "^10.0.0",
+    "cors": "^2.8.5",
+    "express": "^4.18.1",
+    "source-map-support": "^0.5.21",
+    "uuid": "^8.3.2"
+  }
+}
+```
+5. vim bin/chapter-4.ts 
+* add cdk-nag check imports and Aspects.of(app).add(new AwsSolutionsChecks({ verbose: true }))
+```
+#!/usr/bin/env node
+import 'source-map-support/register';
+import * as cdk from 'aws-cdk-lib';
+import { Chapter3Stack } from '../lib/chapter-4-stack';
+// Add cdk-nag checks 
+import { AwsSolutionsChecks } from 'cdk-nag'
+import { Aspects } from 'aws-cdk-lib';
+
+const app = new cdk.App();
+// Add the cdk-nag AwsSolutions Pack with extra verbose logging enabled.
+Aspects.of(app).add(new AwsSolutionsChecks({ verbose: true }))
+// Original Chapter4Stack below
+new Chapter3Stack(app, 'Chapter4Stack', {
+//  env: { region: 'us-east-1', account: process.env.CDK_DEFAULT_ACCOUNT },
+    env: { account: '507370583167', region: 'us-east-1' },
+});
+```
+6. npm install cdk-nag
+7. cdk synth
+`[WARNING] aws-cdk-lib.aws_ec2.SubnetType#PRIVATE_WITH_NAT is deprecated.
+  use `PRIVATE_WITH_EGRESS`
+  This API will be removed in the next major release.
+[Error at /Chapter4Stack/MyVPC/Resource] AwsSolutions-VPC7: The VPC does not have an associated Flow Log. VPC Flow Logs capture network flow information for a VPC, subnet, or network interface and stores it in Amazon CloudWatch Logs. Flow log data can help customers troubleshoot network issues; for example, to diagnose why specific traffic is not reaching an instance, which might be a result of overly restrictive security group rules.
+
+[Error at /Chapter4Stack/WebBucket/Resource] AwsSolutions-S1: The S3 Bucket has server access logs disabled. The bucket should have server access logging enabled to provide detailed records for the requests that are made to the bucket.
+
+[Error at /Chapter4Stack/WebBucket/Resource] AwsSolutions-S2: The S3 Bucket does not have public access restricted and blocked. The bucket should have public access restricted and blocked to prevent unauthorized access.
+
+[Error at /Chapter4Stack/WebBucket/Resource] AwsSolutions-S5: The S3 static website bucket either has an open world bucket policy or does not use a CloudFront Origin Access Identity (OAI) in the bucket policy for limited getObject and/or putObject permissions. An OAI allows you to provide access to content in your S3 static website bucket through CloudFront URLs without enabling public access through an open bucket policy, disabling S3 Block Public Access settings, and/or through object ACLs.
+
+[Error at /Chapter4Stack/WebBucket/Resource] AwsSolutions-S10: The S3 Bucket or bucket policy does not require requests to use SSL. You can use HTTPS (TLS) to help prevent potential attackers from eavesdropping on or manipulating network traffic using person-in-the-middle or similar attacks. You should allow only encrypted connections over HTTPS (TLS) using the aws:SecureTransport condition on Amazon S3 bucket policies.
+
+[Error at /Chapter4Stack/WebBucket/Policy/Resource] AwsSolutions-S10: The S3 Bucket or bucket policy does not require requests to use SSL. You can use HTTPS (TLS) to help prevent potential attackers from eavesdropping on or manipulating network traffic using person-in-the-middle or similar attacks. You should allow only encrypted connections over HTTPS (TLS) using the aws:SecureTransport condition on Amazon S3 bucket policies.
+
+[Error at /Chapter4Stack/Custom::CDKBucketDeployment8693BB64968944B69AAFB0CC9EB8756C/ServiceRole/Resource] AwsSolutions-IAM4[Policy::arn:<AWS::Partition>:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole]: The IAM user, role, or group uses AWS managed policies. An AWS managed policy is a standalone policy that is created and administered by AWS. Currently, many AWS managed policies do not restrict resource scope. Replace AWS managed policies with system specific (customer) managed policies.This is a granular rule that returns individual findings that can be suppressed with 'appliesTo'. The findings are in the format 'Policy::<policy>' for AWS managed policies. Example: appliesTo: ['Policy::arn:<AWS::Partition>:iam::aws:policy/foo'].
+
+[Error at /Chapter4Stack/Custom::CDKBucketDeployment8693BB64968944B69AAFB0CC9EB8756C/ServiceRole/DefaultPolicy/Resource] AwsSolutions-IAM5[Action::s3:GetBucket*]: The IAM entity contains wildcard permissions and does not have a cdk-nag rule suppression with evidence for those permission. Metadata explaining the evidence (e.g. via supporting links) for wildcard permissions allows for transparency to operators. This is a granular rule that returns individual findings that can be suppressed with 'appliesTo'. The findings are in the format 'Action::<action>' for policy actions and 'Resource::<resource>' for resources. Example: appliesTo: ['Action::s3:*'].
+
+[Error at /Chapter4Stack/Custom::CDKBucketDeployment8693BB64968944B69AAFB0CC9EB8756C/ServiceRole/DefaultPolicy/Resource] AwsSolutions-IAM5[Action::s3:GetObject*]: The IAM entity contains wildcard permissions and does not have a cdk-nag rule suppression with evidence for those permission. Metadata explaining the evidence (e.g. via supporting links) for wildcard permissions allows for transparency to operators. This is a granular rule that returns individual findings that can be suppressed with 'appliesTo'. The findings are in the format 'Action::<action>' for policy actions and 'Resource::<resource>' for resources. Example: appliesTo: ['Action::s3:*'].
+
+[Error at /Chapter4Stack/Custom::CDKBucketDeployment8693BB64968944B69AAFB0CC9EB8756C/ServiceRole/DefaultPolicy/Resource] AwsSolutions-IAM5[Action::s3:List*]: The IAM entity contains wildcard permissions and does not have a cdk-nag rule suppression with evidence for those permission. Metadata explaining the evidence (e.g. via supporting links) for wildcard permissions allows for transparency to operators. This is a granular rule that returns individual findings that can be suppressed with 'appliesTo'. The findings are in the format 'Action::<action>' for policy actions and 'Resource::<resource>' for resources. Example: appliesTo: ['Action::s3:*'].
+
+[Error at /Chapter4Stack/Custom::CDKBucketDeployment8693BB64968944B69AAFB0CC9EB8756C/ServiceRole/DefaultPolicy/Resource] AwsSolutions-IAM5[Resource::arn:<AWS::Partition>:s3:::cdk-hnb659fds-assets-507370583167-us-east-1/*]: The IAM entity contains wildcard permissions and does not have a cdk-nag rule suppression with evidence for those permission. Metadata explaining the evidence (e.g. via supporting links) for wildcard permissions allows for transparency to operators. This is a granular rule that returns individual findings that can be suppressed with 'appliesTo'. The findings are in the format 'Action::<action>' for policy actions and 'Resource::<resource>' for resources. Example: appliesTo: ['Action::s3:*'].
+
+[Error at /Chapter4Stack/Custom::CDKBucketDeployment8693BB64968944B69AAFB0CC9EB8756C/ServiceRole/DefaultPolicy/Resource] AwsSolutions-IAM5[Action::s3:Abort*]: The IAM entity contains wildcard permissions and does not have a cdk-nag rule suppression with evidence for those permission. Metadata explaining the evidence (e.g. via supporting links) for wildcard permissions allows for transparency to operators. This is a granular rule that returns individual findings that can be suppressed with 'appliesTo'. The findings are in the format 'Action::<action>' for policy actions and 'Resource::<resource>' for resources. Example: appliesTo: ['Action::s3:*'].
+
+[Error at /Chapter4Stack/Custom::CDKBucketDeployment8693BB64968944B69AAFB0CC9EB8756C/ServiceRole/DefaultPolicy/Resource] AwsSolutions-IAM5[Action::s3:DeleteObject*]: The IAM entity contains wildcard permissions and does not have a cdk-nag rule suppression with evidence for those permission. Metadata explaining the evidence (e.g. via supporting links) for wildcard permissions allows for transparency to operators. This is a granular rule that returns individual findings that can be suppressed with 'appliesTo'. The findings are in the format 'Action::<action>' for policy actions and 'Resource::<resource>' for resources. Example: appliesTo: ['Action::s3:*'].
+
+[Error at /Chapter4Stack/Custom::CDKBucketDeployment8693BB64968944B69AAFB0CC9EB8756C/ServiceRole/DefaultPolicy/Resource] AwsSolutions-IAM5[Resource::<WebBucket12880F5B.Arn>/*]: The IAM entity contains wildcard permissions and does not have a cdk-nag rule suppression with evidence for those permission. Metadata explaining the evidence (e.g. via supporting links) for wildcard permissions allows for transparency to operators. This is a granular rule that returns individual findings that can be suppressed with 'appliesTo'. The findings are in the format 'Action::<action>' for policy actions and 'Resource::<resource>' for resources. Example: appliesTo: ['Action::s3:*'].
+
+[Error at /Chapter4Stack/Custom::CDKBucketDeployment8693BB64968944B69AAFB0CC9EB8756C/Resource] AwsSolutions-L1: The non-container Lambda function is not configured to use the latest runtime version. Use the latest available runtime for the targeted language to avoid technical debt. Runtimes specific to a language or framework version are deprecated when the version reaches end of life. This rule only applies to non-container Lambda functions.
+
+[Warning at /Chapter4Stack/Frontend-Distribution/Resource] AwsSolutions-CFR1: The CloudFront distribution may require Geo restrictions. Geo restriction may need to be enabled for the distribution in order to allow or deny a country in order to allow or restrict users in specific locations from accessing content.
+
+[Warning at /Chapter4Stack/Frontend-Distribution/Resource] AwsSolutions-CFR2: The CloudFront distribution may require integration with AWS WAF. The Web Application Firewall can help protect against application-layer attacks that can compromise the security of the system or place unnecessary load on them.
+
+[Error at /Chapter4Stack/Frontend-Distribution/Resource] AwsSolutions-CFR3: The CloudFront distribution does not have access logging enabled. Enabling access logs helps operators track all viewer requests for the content delivered through the Content Delivery Network.
+
+[Error at /Chapter4Stack/Frontend-Distribution/Resource] AwsSolutions-CFR5: The CloudFront distributions uses SSLv3 or TLSv1 for communication to the origin. Vulnerabilities have been and continue to be discovered in the deprecated SSL and TLS protocols. Using a security policy with minimum TLSv1.1 or TLSv1.2 and appropriate security ciphers for HTTPS helps protect viewer connections.
+
+[Error at /Chapter4Stack/MySQLCredentials/Resource] AwsSolutions-SMG4: The secret does not have automatic rotation scheduled. AWS Secrets Manager can be configured to automatically rotate the secret for a secured service or database.
+
+[Error at /Chapter4Stack/MySQL-RDS-Instance/Resource] AwsSolutions-RDS2: The RDS instance or Aurora DB cluster does not have storage encryption enabled. Storage encryption helps protect data-at-rest by encrypting the underlying storage, automated backups, read replicas, and snapshots for the database.
+
+[Error at /Chapter4Stack/MySQL-RDS-Instance/Resource] AwsSolutions-RDS3: The non-Aurora RDS DB instance does not have multi-AZ support enabled. Use multi-AZ deployment configurations for high availability and automatic failover support fully managed by AWS.
+
+[Error at /Chapter4Stack/MySQL-RDS-Instance/Resource] AwsSolutions-RDS10: The RDS instance or Aurora DB cluster does not have deletion protection enabled. Enabling Deletion Protection at the cluster level for Amazon Aurora databases or instance level for non Aurora instances helps protect from accidental deletion.
+
+[Error at /Chapter4Stack/MySQL-RDS-Instance/Resource] AwsSolutions-RDS11: The RDS instance or Aurora DB cluster uses the default endpoint port. Port obfuscation (using a non default endpoint port) adds an additional layer of defense against non-targeted attacks (i.e. MySQL/Aurora port 3306, SQL Server port 1433, PostgreSQL port 5432, etc).
+
+[Error at /Chapter4Stack/Function/ServiceRole/Resource] AwsSolutions-IAM4[Policy::arn:<AWS::Partition>:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole]: The IAM user, role, or group uses AWS managed policies. An AWS managed policy is a standalone policy that is created and administered by AWS. Currently, many AWS managed policies do not restrict resource scope. Replace AWS managed policies with system specific (customer) managed policies.This is a granular rule that returns individual findings that can be suppressed with 'appliesTo'. The findings are in the format 'Policy::<policy>' for AWS managed policies. Example: appliesTo: ['Policy::arn:<AWS::Partition>:iam::aws:policy/foo'].
+
+[Error at /Chapter4Stack/Function/ServiceRole/Resource] AwsSolutions-IAM4[Policy::arn:<AWS::Partition>:iam::aws:policy/service-role/AWSLambdaVPCAccessExecutionRole]: The IAM user, role, or group uses AWS managed policies. An AWS managed policy is a standalone policy that is created and administered by AWS. Currently, many AWS managed policies do not restrict resource scope. Replace AWS managed policies with system specific (customer) managed policies.This is a granular rule that returns individual findings that can be suppressed with 'appliesTo'. The findings are in the format 'Policy::<policy>' for AWS managed policies. Example: appliesTo: ['Policy::arn:<AWS::Partition>:iam::aws:policy/foo'].
+
+[Error at /Chapter4Stack/LogRetentionaae0aa3c5b4d4f87b02d85b201efdd8a/ServiceRole/Resource] AwsSolutions-IAM4[Policy::arn:<AWS::Partition>:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole]: The IAM user, role, or group uses AWS managed policies. An AWS managed policy is a standalone policy that is created and administered by AWS. Currently, many AWS managed policies do not restrict resource scope. Replace AWS managed policies with system specific (customer) managed policies.This is a granular rule that returns individual findings that can be suppressed with 'appliesTo'. The findings are in the format 'Policy::<policy>' for AWS managed policies. Example: appliesTo: ['Policy::arn:<AWS::Partition>:iam::aws:policy/foo'].
+
+[Error at /Chapter4Stack/LogRetentionaae0aa3c5b4d4f87b02d85b201efdd8a/ServiceRole/DefaultPolicy/Resource] AwsSolutions-IAM5[Resource::*]: The IAM entity contains wildcard permissions and does not have a cdk-nag rule suppression with evidence for those permission. Metadata explaining the evidence (e.g. via supporting links) for wildcard permissions allows for transparency to operators. This is a granular rule that returns individual findings that can be suppressed with 'appliesTo'. The findings are in the format 'Action::<action>' for policy actions and 'Resource::<resource>' for resources. Example: appliesTo: ['Action::s3:*'].
+
+[Error at /Chapter4Stack/AwsCustomResourceRole/DefaultPolicy/Resource] AwsSolutions-IAM5[Resource::arn:aws:lambda:us-east-1:507370583167:function:*-ResInitChapter4Stack]: The IAM entity contains wildcard permissions and does not have a cdk-nag rule suppression with evidence for those permission. Metadata explaining the evidence (e.g. via supporting links) for wildcard permissions allows for transparency to operators. This is a granular rule that returns individual findings that can be suppressed with 'appliesTo'. The findings are in the format 'Action::<action>' for policy actions and 'Resource::<resource>' for resources. Example: appliesTo: ['Action::s3:*'].
+
+[Warning at /Chapter4Stack/AwsCustomResource] installLatestAwsSdk was not specified, and defaults to true. You probably do not want this. Set the global context flag '@aws-cdk/customresources:installLatestAwsSdkDefault' to false to switch this behavior off project-wide, or set the property explicitly to true if you know you need to call APIs that are not in Lambda's built-in SDK version.
+[Error at /Chapter4Stack/AwsCustomResource/CustomResourcePolicy/Resource] AwsSolutions-IAM5[Resource::*]: The IAM entity contains wildcard permissions and does not have a cdk-nag rule suppression with evidence for those permission. Metadata explaining the evidence (e.g. via supporting links) for wildcard permissions allows for transparency to operators. This is a granular rule that returns individual findings that can be suppressed with 'appliesTo'. The findings are in the format 'Action::<action>' for policy actions and 'Resource::<resource>' for resources. Example: appliesTo: ['Action::s3:*'].
+
+[Error at /Chapter4Stack/AWS679f53fac002430cb0da5b7982bd2287/Resource] AwsSolutions-L1: The non-container Lambda function is not configured to use the latest runtime version. Use the latest available runtime for the targeted language to avoid technical debt. Runtimes specific to a language or framework version are deprecated when the version reaches end of life. This rule only applies to non-container Lambda functions.
+
+[Error at /Chapter4Stack/EcsCluster/Resource] AwsSolutions-ECS4: The ECS Cluster has CloudWatch Container Insights disabled. CloudWatch Container Insights allow operators to gain a better perspective on how the cluster’s applications and microservices are performing.
+
+[Error at /Chapter4Stack/EcsCluster/DefaultAutoScalingGroup/InstanceRole/DefaultPolicy/Resource] AwsSolutions-IAM5[Action::ecs:Submit*]: The IAM entity contains wildcard permissions and does not have a cdk-nag rule suppression with evidence for those permission. Metadata explaining the evidence (e.g. via supporting links) for wildcard permissions allows for transparency to operators. This is a granular rule that returns individual findings that can be suppressed with 'appliesTo'. The findings are in the format 'Action::<action>' for policy actions and 'Resource::<resource>' for resources. Example: appliesTo: ['Action::s3:*'].
+
+[Error at /Chapter4Stack/EcsCluster/DefaultAutoScalingGroup/InstanceRole/DefaultPolicy/Resource] AwsSolutions-IAM5[Resource::*]: The IAM entity contains wildcard permissions and does not have a cdk-nag rule suppression with evidence for those permission. Metadata explaining the evidence (e.g. via supporting links) for wildcard permissions allows for transparency to operators. This is a granular rule that returns individual findings that can be suppressed with 'appliesTo'. The findings are in the format 'Action::<action>' for policy actions and 'Resource::<resource>' for resources. Example: appliesTo: ['Action::s3:*'].
+
+[Error at /Chapter4Stack/EcsCluster/DefaultAutoScalingGroup/LaunchConfig] AwsSolutions-EC26: The resource creates one or more EBS volumes that have encryption disabled. With EBS encryption, you aren't required to build, maintain, and secure your own key management infrastructure. EBS encryption uses KMS keys when creating encrypted volumes and snapshots. This helps protect data at rest.
+
+[Error at /Chapter4Stack/EcsCluster/DefaultAutoScalingGroup/ASG] AwsSolutions-AS3: The Auto Scaling Group does not have notifications configured for all scaling events. Notifications on EC2 instance launch, launch error, termination, and termination errors allow operators to gain better insights into systems attributes such as activity and health.
+
+[Error at /Chapter4Stack/EcsCluster/DefaultAutoScalingGroup/DrainECSHook/Function/ServiceRole/Resource] AwsSolutions-IAM4[Policy::arn:<AWS::Partition>:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole]: The IAM user, role, or group uses AWS managed policies. An AWS managed policy is a standalone policy that is created and administered by AWS. Currently, many AWS managed policies do not restrict resource scope. Replace AWS managed policies with system specific (customer) managed policies.This is a granular rule that returns individual findings that can be suppressed with 'appliesTo'. The findings are in the format 'Policy::<policy>' for AWS managed policies. Example: appliesTo: ['Policy::arn:<AWS::Partition>:iam::aws:policy/foo'].
+
+[Error at /Chapter4Stack/EcsCluster/DefaultAutoScalingGroup/DrainECSHook/Function/ServiceRole/DefaultPolicy/Resource] AwsSolutions-IAM5[Resource::*]: The IAM entity contains wildcard permissions and does not have a cdk-nag rule suppression with evidence for those permission. Metadata explaining the evidence (e.g. via supporting links) for wildcard permissions allows for transparency to operators. This is a granular rule that returns individual findings that can be suppressed with 'appliesTo'. The findings are in the format 'Action::<action>' for policy actions and 'Resource::<resource>' for resources. Example: appliesTo: ['Action::s3:*'].
+
+[Error at /Chapter4Stack/EcsCluster/DefaultAutoScalingGroup/DrainECSHook/Function/ServiceRole/DefaultPolicy/Resource] AwsSolutions-IAM5[Resource::arn:<AWS::Partition>:autoscaling:us-east-1:507370583167:autoScalingGroup:*:autoScalingGroupName/<EcsClusterDefaultAutoScalingGroupASGC1A785DB>]: The IAM entity contains wildcard permissions and does not have a cdk-nag rule suppression with evidence for those permission. Metadata explaining the evidence (e.g. via supporting links) for wildcard permissions allows for transparency to operators. This is a granular rule that returns individual findings that can be suppressed with 'appliesTo'. The findings are in the format 'Action::<action>' for policy actions and 'Resource::<resource>' for resources. Example: appliesTo: ['Action::s3:*'].
+
+[Error at /Chapter4Stack/EcsCluster/DefaultAutoScalingGroup/DrainECSHook/Function/Resource] AwsSolutions-L1: The non-container Lambda function is not configured to use the latest runtime version. Use the latest available runtime for the targeted language to avoid technical debt. Runtimes specific to a language or framework version are deprecated when the version reaches end of life. This rule only applies to non-container Lambda functions.
+
+[Error at /Chapter4Stack/EcsCluster/DefaultAutoScalingGroup/LifecycleHookDrainHook/Topic/Resource] AwsSolutions-SNS2: The SNS Topic does not have server-side encryption enabled. Server side encryption adds additional protection of sensitive data delivered as messages to subscribers.
+
+[Error at /Chapter4Stack/EcsCluster/DefaultAutoScalingGroup/LifecycleHookDrainHook/Topic/Resource] AwsSolutions-SNS3: The SNS Topic does not require publishers to use SSL. Without HTTPS (TLS), a network-based attacker can eavesdrop on network traffic or manipulate it, using an attack such as man-in-the-middle. Allow only encrypted connections over HTTPS (TLS) using the aws:SecureTransport condition and the 'sns: Publish' action in the topic policy to force publishers to use SSL. If SSE is already enabled then this control is auto enforced.
+
+[Error at /Chapter4Stack/TaskDefinition/Resource] AwsSolutions-ECS2: The ECS Task Definition includes a container definition that directly specifies environment variables. Use secrets to inject environment variables during container startup from AWS Systems Manager Parameter Store or Secrets Manager instead of directly specifying plaintext environment variables. Updates to direct environment variables require operators to change task definitions and perform new deployments.
+
+[Error at /Chapter4Stack/TaskDefinition/ExecutionRole/DefaultPolicy/Resource] AwsSolutions-IAM5[Resource::*]: The IAM entity contains wildcard permissions and does not have a cdk-nag rule suppression with evidence for those permission. Metadata explaining the evidence (e.g. via supporting links) for wildcard permissions allows for transparency to operators. This is a granular rule that returns individual findings that can be suppressed with 'appliesTo'. The findings are in the format 'Action::<action>' for policy actions and 'Resource::<resource>' for resources. Example: appliesTo: ['Action::s3:*'].
+
+[Error at /Chapter4Stack/LB/Resource] AwsSolutions-ELB2: The ELB does not have access logs enabled. Access logs allow operators to to analyze traffic patterns and identify and troubleshoot security issues.
+
+[Error at /Chapter4Stack/LB/SecurityGroup/Resource] AwsSolutions-EC23: The Security Group allows for 0.0.0.0/0 or ::/0 inbound access. Large port ranges, when open, expose instances to unwanted attacks. More than that, they make traceability of vulnerabilities very difficult. For instance, your web servers may only require 80 and 443 ports to be open, but not all. One of the most common mistakes observed is when  all ports for 0.0.0.0/0 range are open in a rush to access the instance. EC2 instances must expose only to those ports enabled on the corresponding security group level.
+
+
+Found errors
+```
+8. cat cdk.out/AwsSolutions-Chapter4Stack-NagReport.csv
+
 # References
 * [regula](https://github.com/fugue/regula)
 * [regula.dev](https://regula.dev/getting-started.html#tutorial-run-regula-locally-on-terraform-iac)
