@@ -2242,7 +2242,8 @@ new Chapter3Stack(app, 'Chapter4Stack', {
 ```
 6. npm install cdk-nag
 7. cdk synth
-`[WARNING] aws-cdk-lib.aws_ec2.SubnetType#PRIVATE_WITH_NAT is deprecated.
+```
+[WARNING] aws-cdk-lib.aws_ec2.SubnetType#PRIVATE_WITH_NAT is deprecated.
   use `PRIVATE_WITH_EGRESS`
   This API will be removed in the next major release.
 [Error at /Chapter4Stack/MyVPC/Resource] AwsSolutions-VPC7: The VPC does not have an associated Flow Log. VPC Flow Logs capture network flow information for a VPC, subnet, or network interface and stores it in Amazon CloudWatch Logs. Flow log data can help customers troubleshoot network issues; for example, to diagnose why specific traffic is not reaching an instance, which might be a result of overly restrictive security group rules.
